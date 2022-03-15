@@ -19,13 +19,13 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(gyrologger gyrologger.cpp )
+add_executable(gyrologger gyrologger.cpp hw_config.cpp)
 
 pico_set_program_name(gyrologger "gyrologger")
 pico_set_program_version(gyrologger "0.1")
 
 # no_flash means the target is to run from RAM
-pico_set_binary_type(gyrologger no_flash)
+#pico_set_binary_type(gyrologger no_flash)
 
 pico_enable_stdio_uart(gyrologger 0)
 pico_enable_stdio_usb(gyrologger 1)
@@ -33,10 +33,13 @@ pico_enable_stdio_usb(gyrologger 1)
 # Add the standard library to the build
 target_link_libraries(gyrologger pico_stdlib)
 
+add_subdirectory(no-OS-FatFS-SD-SPI-RPi-Pico/FatFs_SPI build)
+
 # Add any user requested libraries
 target_link_libraries(gyrologger
         hardware_spi
         pico_multicore
+        FatFs_SPI
         )
 
 pico_add_extra_outputs(gyrologger)

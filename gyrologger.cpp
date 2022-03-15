@@ -12,6 +12,10 @@
 #include "hardware/spi.h"
 #include "pico/multicore.h"
 #include "pico/util/queue.h"
+#include "ff.h"
+#include "f_util.h"
+#include "hw_config.h"
+#include "rtc.h"
 
 /* Example code to talk to a MPU9250 MEMS accelerometer and gyroscope.
    Ignores the magnetometer, that is left as a exercise for the reader.
@@ -75,14 +79,21 @@
 #define MPU6500_DLPF_BW_5           0x06
 
 #define MPU6500_CUSTOM_CONFIG           0b00000010
-#define MPU6500_CUSTOM_GYRO_CONFIG      0b11111011
+#define MPU6500_CUSTOM_GYRO_CONFIG      0b11111000
 #define MPU6500_CUSTOM_ACCEL_CONFIG     0b11111000
 #define MPU6500_CUSTOM_ACCEL_CONFIG_2   0b00000010
 
+#define GYRO_CALIBRATION_X 2186
+#define GYRO_CALIBRATION_Y 2408
+#define GYRO_CALIBRATION_Z -8
+
+#define RATE_DELAY 2000
+
 typedef struct
 {
-    int16_t gyro[3];
-    int16_t acceleration[3];
+    int16_t gyro[3] = { 0, 0, 0 };
+    int16_t acceleration[3] = { 0, 0, 0 };
+    uint64_t us = 0;
 } queue_entry_t;
 
 queue_t call_queue;
@@ -108,16 +119,13 @@ static void read_registers(uint8_t reg, uint8_t *buf, uint16_t len) {
     reg |= READ_BIT;
     cs_select();
     spi_write_blocking(SPI_PORT, &reg, 1);
-    busy_wait_us(1);
+    busy_wait_us(10);
     spi_read_blocking(SPI_PORT, reg, buf, len);
     cs_deselect();
-    busy_wait_us(1);
+    busy_wait_us(10);
 }
 
 static void write_registers(uint8_t reg, uint8_t *buf, uint16_t len) {
-    // For this particular device, we send the device the register we want to read
-    // first, then subsequently read from the device. The register is auto incrementing
-    // so we don't need to keep sending the register we want, just the first.;
     uint8_t aux[len + 1];
     aux[0] = reg;
     memcpy(&aux[1], buf, len);
@@ -125,7 +133,7 @@ static void write_registers(uint8_t reg, uint8_t *buf, uint16_t len) {
     cs_select();
     spi_write_blocking(SPI_PORT, aux, len);
     cs_deselect();
-    busy_wait_us(1);
+    busy_wait_us(10);
 }
 
 static void adjustConfig(uint8_t configRegister, uint8_t configValue, uint8_t bits, uint8_t shift) {
@@ -237,22 +245,69 @@ void calibrate_gyro(int16_t gyroCal[3], int count)  //Used to calibrate the gyro
 
 void core1_entry() {
     printf("Started second core\n");
+    spi_init(spi0, 1000000);
+    sd_card_t *pSD = sd_get_by_num(0);
+    FRESULT fr = f_mount(&pSD->fatfs, pSD->pcName, 1);
+    if (fr == FR_OK) {
+        printf("Mounted sd card\n");
+    } else {
+        printf("Failed to mount sd card %s (%d)\n", FRESULT_str(fr), fr);
+    }
+    FIL fil;
+    const char* const filename = "log.csv";
+    fr = f_open(&fil, filename, FA_WRITE | FA_CREATE_ALWAYS);
+    if (fr == FR_OK) {
+        printf("Successfully opened %s for writing\n", filename);
+    } else {
+        printf("Failed to open %s for writing %s (%d)\n", filename, FRESULT_str(fr), fr);
+    }
 
+    int res = f_printf(&fil, "GYROFLOW IMU LOG\n"
+                    "version,1.1\n"
+                    "id,custom_logger_name\n"
+                    "orientation,Zxy\n"
+                    "tscale,0.000001\n"
+                    "gscale,0.00106422515\n"
+                    "ascale,0.00048828125\n"
+                    "t,gx,gy,gz,ax,ay,az\n");
+    if (res < 0) {
+        printf("f_printf faield\n");
+    }
+    uint64_t start = get_absolute_time();
+    bool finished = false;
+    char buffer[100];
     while(1) {
         queue_entry_t entry;
         queue_remove_blocking(&call_queue, &entry);
-
+        if (get_absolute_time() - start <= 30000000) {
+            snprintf(buffer, 100, "%llu,%d,%d,%d,%d,%d,%d\n", entry.us, entry.gyro[0], entry.gyro[1], entry.gyro[2], entry.acceleration[0], entry.acceleration[1], entry.acceleration[2]);
+            f_write(&fil, buffer, strlen(buffer), NULL);
+        } else if(!finished) {
+            finished = true;
+            fr = f_close(&fil);
+            if (FR_OK != fr) {
+                printf("f_close error: %s (%d)\n", FRESULT_str(fr), fr);
+            }
+            f_unmount(pSD->pcName);
+            printf("Finished writing...\n");
+        }
         //printf("Acc. X = %d, Y = %d, Z = %d\n", entry.acceleration[0], entry.acceleration[1], entry.acceleration[2]);
         //printf("Gyro. X = %d, Y = %d, Z = %d\n", entry.gyro[0], entry.gyro[1], entry.gyro[2]);
     }
+
+    fr = f_close(&fil);
+    if (FR_OK != fr) {
+        printf("f_close error: %s (%d)\n", FRESULT_str(fr), fr);
+    }
+    f_unmount(pSD->pcName);
 }
 
 int main() {
     stdio_init_all();
-    sleep_ms(2000);
+    time_init();
+    sleep_ms(1000);
 
     printf("Hello, MPU9250! Reading raw data from registers via SPI...\n");
-
     spi_init(SPI_PORT, 1000000);
     gpio_set_function(PIN_MISO, GPIO_FUNC_SPI);
     gpio_set_function(PIN_SCK, GPIO_FUNC_SPI);
@@ -278,12 +333,12 @@ int main() {
     printf("Baudrate: %d\n", baudrate);
     busy_wait_us(5);
 
-    int16_t acceleration[3], gyro[3], gyroCalibration[3];
+    int16_t acceleration[3], gyro[3], gyroCalibration[3] = { GYRO_CALIBRATION_X, GYRO_CALIBRATION_Y, GYRO_CALIBRATION_Z };
 
-    calibrate_gyro(gyroCalibration, 1000);
+    //calibrate_gyro(gyroCalibration, 1000);
     printf("Calibration: %d %d %d\n", gyroCalibration[0], gyroCalibration[1], gyroCalibration[2]);
 
-    queue_init(&call_queue, sizeof(queue_entry_t), 10);
+    queue_init(&call_queue, sizeof(queue_entry_t), 100);
     queue_entry_t entry;
 
     multicore_launch_core1(core1_entry);
@@ -291,27 +346,37 @@ int main() {
     absolute_time_t loopStart = get_absolute_time();
     absolute_time_t loopEnd;
     uint64_t elapsedUs = 0;
-    uint16_t count = 0;
+    uint32_t count = 0;
+    
+    absolute_time_t rateLimitingStart;
+    absolute_time_t rateLimitingEnd;
+    uint64_t rateLimitingElapsedUs = 0;
+    int64_t rateDelay = 0;
+    uint64_t startUs = get_absolute_time();
     while (1) {
-        //mpu9250_read_raw(acceleration, gyro, &temp);
+        rateLimitingStart = get_absolute_time();
         mpu9250_read_raw_gyro(entry.gyro);
         mpu9250_read_raw_accel(entry.acceleration);
         entry.gyro[0] -= gyroCalibration[0];
         entry.gyro[1] -= gyroCalibration[1];
         entry.gyro[2] -= gyroCalibration[2];
-
+        entry.us = rateLimitingStart - startUs;
         queue_add_blocking(&call_queue, &entry);
 
         count++;
         loopEnd = get_absolute_time();
         elapsedUs = loopEnd - loopStart;
-        if (elapsedUs >= 100000) {
+        if (elapsedUs >= 1000000) {
             printf("%d\n", count);
+            //printf("%llu,%d,%d,%d,%d,%d,%d\n", entry.us, entry.gyro[0], entry.gyro[1], entry.gyro[2], entry.acceleration[0], entry.acceleration[1], entry.acceleration[2]);
             count = 0;
             loopStart = loopEnd;
         }
-
-        //sleep_ms(1000);
+        
+        int64_t delay_us = rateLimitingStart + RATE_DELAY - get_absolute_time();
+        if (delay_us > 0) {
+            busy_wait_us(rateLimitingStart + RATE_DELAY - get_absolute_time());
+        }
     }
 
     return 0;
