@@ -9,6 +9,17 @@ set(CMAKE_CXX_STANDARD 17)
 # (note this can come from environment, CMake cache etc)
 set(PICO_SDK_PATH "/home/dietpi/programming/pico/pico-sdk")
 
+set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+set(HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/include/mpuBase.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/mpu6500.hpp
+        )
+
+set(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/gyrologger.cpp 
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/hw_config.cpp 
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/mpu6500.cpp
+        )
+
 # Pull in Raspberry Pi Pico SDK (must be before project)
 include(pico_sdk_import.cmake)
 
@@ -19,7 +30,9 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(gyrologger gyrologger.cpp hw_config.cpp)
+add_executable(gyrologger ${SOURCES} ${HEADERS})
+target_include_directories(gyrologger PRIVATE ${INCLUDE_DIR})
+target_sources(gyrologger PRIVATE ${SOURCES} PRIVATE ${HEADERS})
 
 pico_set_program_name(gyrologger "gyrologger")
 pico_set_program_version(gyrologger "0.1")
@@ -38,6 +51,7 @@ add_subdirectory(no-OS-FatFS-SD-SPI-RPi-Pico/FatFs_SPI build)
 # Add any user requested libraries
 target_link_libraries(gyrologger
         hardware_spi
+        hardware_i2c
         pico_multicore
         FatFs_SPI
         )
