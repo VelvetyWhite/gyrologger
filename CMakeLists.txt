@@ -15,13 +15,17 @@ set(HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/include/mpuBase.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/mpu6500.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/mpu6050.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/timer.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/sdCardWorker.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/gyroLogger.hpp
         )
 
-set(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/gyrologger.cpp 
+set(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp 
         ${CMAKE_CURRENT_SOURCE_DIR}/src/hw_config.cpp 
         ${CMAKE_CURRENT_SOURCE_DIR}/src/mpu6500.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/mpu6050.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/timer.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/sdCardWorker.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gyroLogger.cpp
         )
 
 # Pull in Raspberry Pi Pico SDK (must be before project)
