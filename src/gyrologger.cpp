@@ -20,6 +20,8 @@
 
 #include "mpuBase.hpp"
 #include "mpu6500.hpp"
+#include "mpu6050.hpp"
+#include "timer.hpp"
 
 /* Example code to talk to a MPU9250 MEMS accelerometer and gyroscope.
    Ignores the magnetometer, that is left as a exercise for the reader.
@@ -56,11 +58,15 @@
 #define PIN_SCK  10
 #define PIN_MOSI 11
 
-#define SPI_PORT spi1
+#define PIN_SDA 14
+#define PIN_SCL 15
 
-//#define RATE_DELAY 2000 //500hz
-//#define RATE_DELAY 1000 //1000hz
-#define RATE_DELAY 500 //2000hz
+#define SPI_PORT spi1
+#define I2C_PORT i2c1
+
+//#define RATE_US 2000 //500hz
+#define RATE_US 1000 //1000hz
+//#define RATE_US 500 //2000hz
 
 typedef struct
 {
@@ -153,12 +159,18 @@ int main() {
     sleep_ms(1000);
 
     printf("Init mpu\n");
-    std::unique_ptr<MpuBase> mpu = std::make_unique<Mpu6500>();
-    mpu->init(SPI_PORT, PIN_MISO, PIN_MOSI, PIN_SCK, PIN_CS);
+    
+    std::unique_ptr<MpuBase> mpu = std::make_unique<Mpu6050>();
+    //mpu->init(SPI_PORT, PIN_MISO, PIN_MOSI, PIN_SCK, PIN_CS);
+    mpu->init(I2C_PORT, PIN_SDA, PIN_SCL);
+    
     printf("done init mpu\n");
-    int16_t acceleration[3], gyro[3], gyroCalibration[3] = { GYRO_CALIBRATION_X, GYRO_CALIBRATION_Y, GYRO_CALIBRATION_Z };
+    
+    int16_t acceleration[3], gyro[3];
+    //int16_t gyroCalibration[3] = { MPU6500_GYRO_CALIBRATION_X, MPU6500_GYRO_CALIBRATION_Y, MPU6500_GYRO_CALIBRATION_Z };
+    int16_t gyroCalibration[3] = { MPU6050_GYRO_CALIBRATION_X, MPU6050_GYRO_CALIBRATION_Y, MPU6050_GYRO_CALIBRATION_Z };
 
-    //calibrate_gyro(gyroCalibration, 1000);
+    //calibrate_gyro(mpu.get(), gyroCalibration, 1000);
     printf("Calibration: %d %d %d\n", gyroCalibration[0], gyroCalibration[1], gyroCalibration[2]);
 
     queue_init(&call_queue, sizeof(queue_entry_t), 100);
@@ -166,36 +178,33 @@ int main() {
 
     multicore_launch_core1(core1_entry);
 
-    absolute_time_t loopStart = get_absolute_time();
-    absolute_time_t loopEnd;
-    uint64_t elapsedUs = 0;
     uint32_t count = 0;
-    
-    absolute_time_t rateLimitingStart;
-    absolute_time_t rateLimitingEnd;
-    uint64_t rateLimitingElapsedUs = 0;
-    int64_t rateDelay = 0;
-    uint64_t startUs = get_absolute_time();
+    absolute_time_t loopDurationOverOneSecond = 0;
+
+    Timer timer_1;
+    Timer timer_2;
+    Timer timer_3;
+
+    timer_2.start();
+    timer_3.start();
     while (1) {
-        rateLimitingStart = get_absolute_time();
+        timer_1.start();
         memcpy(entry.gyro, mpu->getRawGyro(), 3);
         memcpy(entry.acceleration, mpu->getRawAccel(), 3);
         entry.gyro[0] -= gyroCalibration[0];
         entry.gyro[1] -= gyroCalibration[1];
         entry.gyro[2] -= gyroCalibration[2];
-        entry.us = rateLimitingStart - startUs;
+        entry.us = timer_2.getTicks();
         queue_add_blocking(&call_queue, &entry);
 
         count++;
-        loopEnd = get_absolute_time();
-        elapsedUs = loopEnd - loopStart;
-        if (elapsedUs >= 1000000) {
+        if (timer_3.getTicks() >= 1000000) {
             printf("%d\n", count);
             //printf("%llu,%d,%d,%d,%d,%d,%d\n", entry.us, entry.gyro[0], entry.gyro[1], entry.gyro[2], entry.acceleration[0], entry.acceleration[1], entry.acceleration[2]);
             count = 0;
-            loopStart = loopEnd;
+            timer_3.start();
         }
-        int64_t delay_us = rateLimitingStart + RATE_DELAY - get_absolute_time();
+        int64_t delay_us = RATE_US - timer_1.getTicks();
         if (delay_us > 0) {
             busy_wait_us(delay_us);
         }

@@ -10,7 +10,7 @@
 class MpuBase {
 public:
     virtual void init(spi_inst_t *spi, uint32_t miso, uint32_t mosi, uint32_t sck, uint32_t cs);
-    virtual void init(i2c_inst_t *i2c, uint8_t sda, uint8_t scl);
+    virtual void init(i2c_inst_t *i2c, uint32_t sda, uint32_t scl);
     virtual int16_t* const getRawGyro() = 0;
     virtual int16_t* const getRawAccel() = 0;
 protected:

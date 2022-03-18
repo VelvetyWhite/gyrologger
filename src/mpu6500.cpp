@@ -3,7 +3,7 @@
 #include <cstring>
 #include <cstdio>
 
-void Mpu6500::init(i2c_inst_t *i2c, uint8_t sda, uint8_t scl) {
+void Mpu6500::init(i2c_inst_t *i2c, uint32_t sda, uint32_t scl) {
     printf("MPU6500 running on spi only\n");
 }
 

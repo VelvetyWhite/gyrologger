@@ -32,18 +32,18 @@
 #define MPU6500_ACCEL_DATA          0x3B
 
 #define MPU6500_CUSTOM_CONFIG           0b00000010
-#define MPU6500_CUSTOM_GYRO_CONFIG      0b11111000
-#define MPU6500_CUSTOM_ACCEL_CONFIG     0b11111000
+#define MPU6500_CUSTOM_GYRO_CONFIG      0b00011000
+#define MPU6500_CUSTOM_ACCEL_CONFIG     0b00011000
 #define MPU6500_CUSTOM_ACCEL_CONFIG_2   0b00000010
 
-#define GYRO_CALIBRATION_X 2186
-#define GYRO_CALIBRATION_Y 2408
-#define GYRO_CALIBRATION_Z -8
+#define MPU6500_GYRO_CALIBRATION_X 2186
+#define MPU6500_GYRO_CALIBRATION_Y 2408
+#define MPU6500_GYRO_CALIBRATION_Z -8
 
 class Mpu6500 : public MpuBase {
 public:
     void init(spi_inst_t *spi, uint32_t miso, uint32_t mosi, uint32_t sck, uint32_t cs);
-    void init(i2c_inst_t *i2c, uint8_t sda, uint8_t scl);
+    void init(i2c_inst_t *i2c, uint32_t sda, uint32_t scl);
     void reset();
     void adjustConfig(uint8_t configRegister, uint8_t configValue, uint8_t bits, uint8_t shift);
     void setConfig(uint8_t configRegister, uint8_t configValue);
