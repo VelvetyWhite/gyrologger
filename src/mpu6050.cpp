@@ -1,4 +1,5 @@
 #include "mpu6050.hpp"
+#include "pico/stdlib.h"
 #include "pico/binary_info.h"
 #include <cstring>
 #include <cstdio>
@@ -38,22 +39,14 @@ int16_t* const Mpu6050::getRawGyro() {
     uint8_t buffer[6];
     
     readRegisters(MPU6050_GYRO_DATA, buffer, 6);
-
-    for (int i = 0; i < 3; i++) {
-        m_rawGyro[i] = (buffer[i * 2] << 8 | buffer[(i * 2) + 1]);;
-    }
-    return m_rawGyro;
+    return convertAxisFromHiLowBuffer(buffer, m_rawGyro);
 }
 int16_t* const Mpu6050::getRawAccel() {
     uint8_t buffer[6];
 
     // Start reading acceleration registers from register 0x3B for 6 bytes
     readRegisters(MPU6050_ACCEL_DATA, buffer, 6);
-
-    for (int i = 0; i < 3; i++) {
-        m_rawAccel[i] = (buffer[i * 2] << 8 | buffer[(i * 2) + 1]);
-    }
-    return m_rawAccel;
+    return convertAxisFromHiLowBuffer(buffer, m_rawAccel);
 }
 
 void Mpu6050::readRegisters(uint8_t reg, uint8_t *buf, uint16_t len) {
@@ -62,9 +55,9 @@ void Mpu6050::readRegisters(uint8_t reg, uint8_t *buf, uint16_t len) {
     // so we don't need to keep sending the register we want, just the first.
 
     i2c_write_blocking(m_i2c, MPU6050_DEVICE_ID, &reg, 1, true);
-    busy_wait_us(10);
+    busy_wait_us(1);
     i2c_read_blocking(m_i2c, MPU6050_DEVICE_ID, buf, len, false);
-    busy_wait_us(10);
+    busy_wait_us(1);
 }
 
 void Mpu6050::writeRegisters(uint8_t reg, uint8_t *buf, uint16_t len) {
@@ -73,39 +66,7 @@ void Mpu6050::writeRegisters(uint8_t reg, uint8_t *buf, uint16_t len) {
     std::memcpy(&aux[1], buf, len);
     len++;
     i2c_write_blocking(m_i2c, MPU6050_DEVICE_ID, aux, len, false);
-    busy_wait_us(10);
-}
-
-void Mpu6050::adjustConfig(uint8_t configRegister, uint8_t configValue, uint8_t bits, uint8_t shift) {
-    uint8_t actualConfig = 0;
-    readRegisters(configRegister, &actualConfig, 1);
-    printf("Config data before changes: %d\n", actualConfig);
-
-    // mask off the data before writing
-    uint32_t mask = (1 << (bits)) - 1;
-    configValue &= mask;
-
-    mask <<= shift; //shift position taken from datasheet
-    actualConfig &= ~mask;          // remove the current data at that spot
-    actualConfig |= configValue << shift; // and add in the new data
-
-    writeRegisters(configRegister, &actualConfig, 1);
-
-    actualConfig = 0;
-    readRegisters(configRegister, &actualConfig, 1);
-    printf("Config data after changes: %d\n", actualConfig);
-}
-
-void Mpu6050::setConfig(uint8_t configRegister, uint8_t configValue) {
-    uint8_t actualConfig = 0;
-    readRegisters(configRegister, &actualConfig, 1);
-    printf("Config data before changes: %d\n", actualConfig);
-    
-    writeRegisters(configRegister, &configValue, 1);
-
-    actualConfig = 0;
-    readRegisters(configRegister, &actualConfig, 1);
-    printf("Config data after changes: %d\n", actualConfig);
+    busy_wait_us(1);
 }
 
 void Mpu6050::setCustomConfig() {

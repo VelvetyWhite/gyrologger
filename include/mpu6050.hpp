@@ -59,8 +59,6 @@ public:
     void init(spi_inst_t *spi, uint32_t miso, uint32_t mosi, uint32_t sck, uint32_t cs);
     void init(i2c_inst_t *i2c, uint32_t sda, uint32_t scl);
     void reset();
-    void adjustConfig(uint8_t configRegister, uint8_t configValue, uint8_t bits, uint8_t shift);
-    void setConfig(uint8_t configRegister, uint8_t configValue);
     void setCustomConfig();
     int16_t* const getRawGyro();
     int16_t* const getRawAccel();

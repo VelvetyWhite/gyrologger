@@ -1,7 +1,20 @@
 #include "mpu6500.hpp"
+#include "pico/stdlib.h"
 #include "pico/binary_info.h"
 #include <cstring>
 #include <cstdio>
+
+inline void Mpu6500::cs_select(uint8_t cs) {
+        asm volatile("nop \n nop \n nop");
+        gpio_put(cs, 0);  // Active low
+        asm volatile("nop \n nop \n nop");
+    }
+
+inline void Mpu6500::cs_deselect(uint8_t cs) {
+    asm volatile("nop \n nop \n nop");
+    gpio_put(cs, 1);
+    asm volatile("nop \n nop \n nop");
+}
 
 void Mpu6500::init(i2c_inst_t *i2c, uint32_t sda, uint32_t scl) {
     printf("MPU6500 running on spi only\n");
@@ -52,22 +65,14 @@ int16_t* const Mpu6500::getRawGyro() {
     uint8_t buffer[6];
     
     readRegisters(MPU6500_GYRO_DATA, buffer, 6);
-
-    for (int i = 0; i < 3; i++) {
-        m_rawGyro[i] = (buffer[i * 2] << 8 | buffer[(i * 2) + 1]);;
-    }
-    return m_rawGyro;
+    return convertAxisFromHiLowBuffer(buffer, m_rawGyro);
 }
 int16_t* const Mpu6500::getRawAccel() {
     uint8_t buffer[6];
 
     // Start reading acceleration registers from register 0x3B for 6 bytes
     readRegisters(MPU6500_ACCEL_DATA, buffer, 6);
-
-    for (int i = 0; i < 3; i++) {
-        m_rawAccel[i] = (buffer[i * 2] << 8 | buffer[(i * 2) + 1]);
-    }
-    return m_rawAccel;
+    return convertAxisFromHiLowBuffer(buffer, m_rawAccel);
 }
 
 void Mpu6500::readRegisters(uint8_t reg, uint8_t *buf, uint16_t len) {
@@ -78,10 +83,10 @@ void Mpu6500::readRegisters(uint8_t reg, uint8_t *buf, uint16_t len) {
     reg |= READ_BIT;
     cs_select(m_cs);
     spi_write_blocking(m_spi, &reg, 1);
-    busy_wait_us(10);
+    busy_wait_us(1);
     spi_read_blocking(m_spi, reg, buf, len);
     cs_deselect(m_cs);
-    busy_wait_us(10);
+    busy_wait_us(1);
 }
 
 void Mpu6500::writeRegisters(uint8_t reg, uint8_t *buf, uint16_t len) {
@@ -92,39 +97,7 @@ void Mpu6500::writeRegisters(uint8_t reg, uint8_t *buf, uint16_t len) {
     cs_select(m_cs);
     spi_write_blocking(m_spi, aux, len);
     cs_deselect(m_cs);
-    busy_wait_us(10);
-}
-
-void Mpu6500::adjustConfig(uint8_t configRegister, uint8_t configValue, uint8_t bits, uint8_t shift) {
-    uint8_t actualConfig = 0;
-    readRegisters(configRegister, &actualConfig, 1);
-    printf("Config data before changes: %d\n", actualConfig);
-
-    // mask off the data before writing
-    uint32_t mask = (1 << (bits)) - 1;
-    configValue &= mask;
-
-    mask <<= shift; //shift position taken from datasheet
-    actualConfig &= ~mask;          // remove the current data at that spot
-    actualConfig |= configValue << shift; // and add in the new data
-
-    writeRegisters(configRegister, &actualConfig, 1);
-
-    actualConfig = 0;
-    readRegisters(configRegister, &actualConfig, 1);
-    printf("Config data after changes: %d\n", actualConfig);
-}
-
-void Mpu6500::setConfig(uint8_t configRegister, uint8_t configValue) {
-    uint8_t actualConfig = 0;
-    readRegisters(configRegister, &actualConfig, 1);
-    printf("Config data before changes: %d\n", actualConfig);
-    
-    writeRegisters(configRegister, &configValue, 1);
-
-    actualConfig = 0;
-    readRegisters(configRegister, &actualConfig, 1);
-    printf("Config data after changes: %d\n", actualConfig);
+    busy_wait_us(1);
 }
 
 void Mpu6500::setCustomConfig() {

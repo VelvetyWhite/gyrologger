@@ -1,5 +1,6 @@
 #include "gyroLogger.hpp"
 #include "timer.hpp"
+#include "oneButton.hpp"
 #include <cstring>
 
 void GyroLogger::init(uint16_t bufferQueueSize, uint16_t rateUs) {
@@ -25,10 +26,19 @@ void GyroLogger::run() {
     Timer timer_2;
     Timer timer_3;
 
+    bool shouldWrite = false;
+
+    OneButton button(26);
+    button.attachClick([&shouldWrite]() {
+        printf("Button pressed!\n");
+        shouldWrite = !shouldWrite;
+    });
+
     timer_2.start();
     timer_3.start();
     while (1) {
         timer_1.start();
+        button.tick();
         memcpy(entry.gyro, m_mpu->getRawGyro(), 3 * sizeof(int16_t));
         memcpy(entry.acceleration, m_mpu->getRawAccel(), 3 * sizeof(int16_t));
         entry.gyro[0] -= m_gyroCalibration[0];
@@ -36,9 +46,7 @@ void GyroLogger::run() {
         entry.gyro[2] -= m_gyroCalibration[2];
         entry.us = timer_2.getTicks();
         
-        if (entry.us >= 30000000) {
-            entry.process = false;
-        }
+        entry.process = shouldWrite;
         m_sdCardWorker.pushData(entry);
 
         count++;
