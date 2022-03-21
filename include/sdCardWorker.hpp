@@ -30,10 +30,14 @@ class SdCardWorker {
 public:
     bool init(uint8_t queueSize);
     void pushData(queue_entry_t &entry);
-    void setFileHeaderData(float aScale, float gScale);
+    void setLoggingFileHeaderData(float aScale, float gScale);
+
+    void createGyroBiasConfig(const int16_t *gyroBias, const int16_t *accelBias);
+    void getGyroBiasConfig(int16_t *gyroBias, int16_t *accelBias);
 
 private:
-    bool createNewFile(FIL &file, char *name);
+    bool createNewFile(FIL &file, const char *name);
+    bool closeFile(FIL &file, const char *name);
     bool writeFileHeader(FIL &file);
     void runnerFunction();
     static void runnerFunctionWrapper();

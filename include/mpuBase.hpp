@@ -44,6 +44,9 @@ public:
     float getAScale() const { return m_aScale[m_accelerometerRange]; }
     float getGScale() const { return m_gScale[m_gyroRange]; }
 
+    int16_t *getGyroBias() { return m_gyroBias; }
+    int16_t *getAccelBias() { return m_accelBias; }
+
     virtual void setAccelerometerRange(MPU_ACCELEROMETER_RANGE accelerometerRange);
     virtual void setGyroRange(MPU_GYRO_RANGE gyroRange);
     virtual void setDlpfBandwidth(MPU_DLPF_BANDWIDTH dlpfBandwidth);

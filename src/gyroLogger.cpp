@@ -9,8 +9,8 @@ void GyroLogger::init(std::unique_ptr<MpuBase> &&mpu, std::unique_ptr<SdCardWork
     m_mpu = std::move(mpu);
     m_sdCardWorker = std::move(sdCardWorker);
     m_rateUs = rateUs;
-
-    m_sdCardWorker->setFileHeaderData(m_mpu->getAScale(), m_mpu->getGScale());
+    m_sdCardWorker->getGyroBiasConfig(m_mpu->getGyroBias(), m_mpu->getAccelBias());
+    m_sdCardWorker->setLoggingFileHeaderData(m_mpu->getAScale(), m_mpu->getGScale());
 }
 
 void GyroLogger::run() {
@@ -34,6 +34,7 @@ void GyroLogger::run() {
         if (!shouldWrite) {
             sleep_ms(1000);
             m_mpu->calculateBias(BIAS_LOOPS);
+            m_sdCardWorker->createGyroBiasConfig(m_mpu->getGyroBias(), m_mpu->getAccelBias());
         } else {
             printf("Can't calculate bias while logging...\n");
         }

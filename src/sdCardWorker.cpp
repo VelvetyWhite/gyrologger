@@ -3,8 +3,10 @@
 #include <cstring>
 #include <functional>
 
+#define MPU_BIAS_FILE_NAME "bias"
+
 bool SdCardWorker::init(uint8_t queueSize) {
-    spi_init(spi0, SD_SPI_INITIAL_BAUD);
+    spi_init(SD_SPI_PORT, SD_SPI_INITIAL_BAUD);
     
     m_sd = sd_get_by_num(0);
     FRESULT result = f_mount(&m_sd->fatfs, m_sd->pcName, 1);
@@ -28,13 +30,24 @@ bool SdCardWorker::init(uint8_t queueSize) {
     return true;
 }
 
-bool SdCardWorker::createNewFile(FIL &file, char *name) {
+bool SdCardWorker::createNewFile(FIL &file, const char *name) {
     FRESULT result = f_open(&file, name, FA_WRITE | FA_CREATE_ALWAYS);
     if (result != FR_OK) {
         printf("Failed to open %s for writing %s (%d)\n", name, FRESULT_str(result), result);
         return false;
     } else {
         printf("Successfully opened %s for writing\n", name);
+    }
+    return true;
+}
+
+bool SdCardWorker::closeFile(FIL &file, const char *name) {
+    FRESULT result = f_close(&file);
+    if (result != FR_OK) {
+        printf("f_close error: %s (%d)\n", FRESULT_str(result), result);
+        return false;
+    } else {
+        printf("Successfully closed %s\n", name);
     }
     return true;
 }
@@ -59,14 +72,14 @@ void SdCardWorker::pushData(queue_entry_t &entry) {
     queue_add_blocking(&m_queue, &entry);
 }
 
-void SdCardWorker::setFileHeaderData(float aScale, float gScale) {
+void SdCardWorker::setLoggingFileHeaderData(float aScale, float gScale) {
     fileHeaderData[0] = aScale;
     fileHeaderData[1] = gScale;
 }
 
 void SdCardWorker::runnerFunction() {
     FIL file;
-    char *name = "log.csv";
+    const char *name = "log.csv";
 
     bool finished = false;
     bool fileOpen = false;
@@ -86,12 +99,7 @@ void SdCardWorker::runnerFunction() {
             f_write(&file, buffer, strlen(buffer), NULL);
         } else {
             if (fileOpen) {
-                FRESULT result = f_close(&file);
-                if (result != FR_OK) {
-                    printf("f_close error: %s (%d)\n", FRESULT_str(result), result);
-                } else {
-                    printf("Successfully closed %s for writing\n", name);
-                }
+                closeFile(file, name);
                 fileOpen = false;
             }
         }
@@ -102,4 +110,25 @@ void SdCardWorker::runnerFunction() {
 void SdCardWorker::runnerFunctionWrapper() {
     SdCardWorker &sdCardWorker = *(SdCardWorker*) multicore_fifo_pop_blocking();
     sdCardWorker.runnerFunction();
+}
+
+void SdCardWorker::createGyroBiasConfig(const int16_t *gyroBias, const int16_t *accelBias) {
+    FIL file;
+    createNewFile(file, MPU_BIAS_FILE_NAME);
+    f_write(&file, gyroBias, 3 * sizeof(int16_t), NULL);
+    f_write(&file, accelBias, 3 * sizeof(int16_t), NULL);
+    closeFile(file, MPU_BIAS_FILE_NAME);
+}
+
+void SdCardWorker::getGyroBiasConfig(int16_t *gyroBias, int16_t *accelBias) {
+    FIL file;
+    FRESULT result = f_open(&file, MPU_BIAS_FILE_NAME, FA_READ);
+    if (result != FR_OK) {
+        printf("Failed to open %s for reading %s (%d)\n", MPU_BIAS_FILE_NAME, FRESULT_str(result), result);
+        return;
+    } else {
+        printf("Successfully opened %s for reading\n", MPU_BIAS_FILE_NAME);
+    }
+    f_read(&file, gyroBias, 3 * sizeof(int16_t), NULL);
+    f_read(&file, accelBias, 3 * sizeof(int16_t), NULL);
 }
