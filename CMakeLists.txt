@@ -63,6 +63,7 @@ add_subdirectory(no-OS-FatFS-SD-SPI-RPi-Pico/FatFs_SPI build)
 target_link_libraries(gyrologger
         hardware_spi
         hardware_i2c
+        hardware_rtc
         pico_multicore
         FatFs_SPI
         )

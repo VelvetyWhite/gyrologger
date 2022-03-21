@@ -32,7 +32,6 @@ void Mpu6050::reset() {
     // There are a load more options to set up the device in different ways that could be added here
     uint8_t buf[] = {0x00};
     writeRegisters(0x6B, buf, 1);
-    setCustomConfig();
 }
 
 int16_t* const Mpu6050::getRawGyro() {
@@ -75,3 +74,17 @@ void Mpu6050::setCustomConfig() {
     setConfig(MPU6050_ACCEL_CONFIG, MPU6050_CUSTOM_ACCEL_CONFIG);
 }
 
+void Mpu6050::setAccelerometerRange(MPU_ACCELEROMETER_RANGE accelerometerRange) {
+    adjustConfig(MPU6050_ACCEL_CONFIG, accelerometerRange, 2, 3);
+    MpuBase::setAccelerometerRange(accelerometerRange);
+}
+
+void Mpu6050::setGyroRange(MPU_GYRO_RANGE gyroRange) {
+    adjustConfig(MPU6050_GYRO_CONFIG, gyroRange, 2, 3);
+    MpuBase::setGyroRange(gyroRange);
+}
+
+void Mpu6050::setDlpfBandwidth(MPU_DLPF_BANDWIDTH dlpfBandwidth) {
+    adjustConfig(MPU6050_CONFIG, dlpfBandwidth, 3, 0);
+    MpuBase::setDlpfBandwidth(dlpfBandwidth);
+}

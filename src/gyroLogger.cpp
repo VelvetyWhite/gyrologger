@@ -3,13 +3,12 @@
 #include "oneButton.hpp"
 #include <cstring>
 
-void GyroLogger::init(uint16_t bufferQueueSize, uint16_t rateUs) {
+#define BIAS_LOOPS 1000
+
+void GyroLogger::init(std::unique_ptr<MpuBase> &&mpu, std::unique_ptr<SdCardWorker> &&sdCardWorker, uint16_t rateUs) {
+    m_mpu = std::move(mpu);
+    m_sdCardWorker = std::move(sdCardWorker);
     m_rateUs = rateUs;
-    m_sdCardWorker.init(bufferQueueSize);
-    m_mpu = std::make_unique<Mpu6050>();
-    //m_mpu->init(SPI_PORT, PIN_MISO, PIN_MOSI, PIN_SCK, PIN_CS);
-    m_mpu->init(I2C_PORT, PIN_SDA, PIN_SCL);
-    sleep_ms(10);
 }
 
 void GyroLogger::run() {
@@ -17,10 +16,6 @@ void GyroLogger::run() {
     absolute_time_t loopDurationOverOneSecond = 0;
 
     queue_entry_t entry;
-
-    m_gyroCalibration[0] = MPU6050_GYRO_CALIBRATION_X;
-    m_gyroCalibration[1] = MPU6050_GYRO_CALIBRATION_Y;
-    m_gyroCalibration[2] = MPU6050_GYRO_CALIBRATION_Z;
 
     Timer timer_1;
     Timer timer_2;
@@ -33,21 +28,27 @@ void GyroLogger::run() {
         printf("Button pressed!\n");
         shouldWrite = !shouldWrite;
     });
+    button.attachDoubleClick([this, &shouldWrite]() {
+        if (!shouldWrite) {
+            sleep_ms(1000);
+            m_mpu->calculateBias(BIAS_LOOPS);
+        } else {
+            printf("Can't calculate bias while logging...\n");
+        }
+    });
 
     timer_2.start();
     timer_3.start();
     while (1) {
         timer_1.start();
         button.tick();
-        memcpy(entry.gyro, m_mpu->getRawGyro(), 3 * sizeof(int16_t));
-        memcpy(entry.acceleration, m_mpu->getRawAccel(), 3 * sizeof(int16_t));
-        entry.gyro[0] -= m_gyroCalibration[0];
-        entry.gyro[1] -= m_gyroCalibration[1];
-        entry.gyro[2] -= m_gyroCalibration[2];
+
+        memcpy(entry.gyro, m_mpu->getUnBiasedGyro(), 3 * sizeof(int16_t));
+        memcpy(entry.acceleration, m_mpu->getUnBiasedAccel(), 3 * sizeof(int16_t));
         entry.us = timer_2.getTicks();
-        
         entry.process = shouldWrite;
-        m_sdCardWorker.pushData(entry);
+
+        m_sdCardWorker->pushData(entry);
 
         count++;
         if (timer_3.getTicks() >= 1000000) {

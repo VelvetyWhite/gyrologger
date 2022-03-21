@@ -5,10 +5,10 @@
 #include <cstdio>
 
 inline void Mpu6500::cs_select(uint8_t cs) {
-        asm volatile("nop \n nop \n nop");
-        gpio_put(cs, 0);  // Active low
-        asm volatile("nop \n nop \n nop");
-    }
+    asm volatile("nop \n nop \n nop");
+    gpio_put(cs, 0);  // Active low
+    asm volatile("nop \n nop \n nop");
+}
 
 inline void Mpu6500::cs_deselect(uint8_t cs) {
     asm volatile("nop \n nop \n nop");
@@ -58,7 +58,6 @@ void Mpu6500::reset() {
     // There are a load more options to set up the device in different ways that could be added here
     uint8_t buf[] = {0x00};
     writeRegisters(0x6B, buf, 1);
-    setCustomConfig();
 }
 
 int16_t* const Mpu6500::getRawGyro() {
@@ -105,4 +104,20 @@ void Mpu6500::setCustomConfig() {
     setConfig(MPU6500_RA_GYRO_CONFIG, MPU6500_CUSTOM_GYRO_CONFIG);
     setConfig(MPU6500_RA_ACCEL_CONFIG, MPU6500_CUSTOM_ACCEL_CONFIG);
     setConfig(MPU6500_RA_ACCEL_CONFIG_2, MPU6500_CUSTOM_ACCEL_CONFIG_2);
+}
+
+void Mpu6500::setAccelerometerRange(MPU_ACCELEROMETER_RANGE accelerometerRange) {
+    adjustConfig(MPU6500_CUSTOM_ACCEL_CONFIG, accelerometerRange, 2, 3);
+    MpuBase::setAccelerometerRange(accelerometerRange);
+}
+
+void Mpu6500::setGyroRange(MPU_GYRO_RANGE gyroRange) {
+    adjustConfig(MPU6500_CUSTOM_GYRO_CONFIG, gyroRange, 2, 3);
+    MpuBase::setGyroRange(gyroRange);
+}
+
+void Mpu6500::setDlpfBandwidth(MPU_DLPF_BANDWIDTH dlpfBandwidth) {
+    adjustConfig(MPU6500_RA_CONFIG, dlpfBandwidth, 3, 0);
+    adjustConfig(MPU6500_RA_ACCEL_CONFIG_2, dlpfBandwidth, 3, 0);
+    MpuBase::setDlpfBandwidth(dlpfBandwidth);
 }

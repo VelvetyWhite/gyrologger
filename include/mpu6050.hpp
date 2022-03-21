@@ -28,31 +28,9 @@
 #define MPU6050_ACCEL_DATA                   0x3B ///< base address for sensor data reads
 #define MPU6050_GYRO_DATA                    0x43 ///< base address for sensor data reads
 
-#define MPU6050_GYRO_FS_250                 0x00
-#define MPU6050_GYRO_FS_500                 0x01
-#define MPU6050_GYRO_FS_1000                0x02
-#define MPU6050_GYRO_FS_2000                0x03
-
-#define MPU6050_ACCEL_FS_2                  0x00
-#define MPU6050_ACCEL_FS_4                  0x01
-#define MPU6050_ACCEL_FS_8                  0x02
-#define MPU6050_ACCEL_FS_16                 0x03
-
-#define MPU6050_DLPF_BW_256                 0x00
-#define MPU6050_DLPF_BW_188                 0x01
-#define MPU6050_DLPF_BW_98                  0x02
-#define MPU6050_DLPF_BW_42                  0x03
-#define MPU6050_DLPF_BW_20                  0x04
-#define MPU6050_DLPF_BW_10                  0x05
-#define MPU6050_DLPF_BW_5                   0x06
-
 #define MPU6050_CUSTOM_CONFIG               0b00000010 //dlpf 94/98
 #define MPU6050_CUSTOM_GYRO_CONFIG          0b00011000 //2000 deg
 #define MPU6050_CUSTOM_ACCEL_CONFIG         0b00011000 //16g
-
-#define MPU6050_GYRO_CALIBRATION_X -113
-#define MPU6050_GYRO_CALIBRATION_Y 3
-#define MPU6050_GYRO_CALIBRATION_Z -56
 
 class Mpu6050 : public MpuBase {
 public:
@@ -60,6 +38,11 @@ public:
     void init(i2c_inst_t *i2c, uint32_t sda, uint32_t scl);
     void reset();
     void setCustomConfig();
+
+    void setAccelerometerRange(MPU_ACCELEROMETER_RANGE accelerometerRange);
+    void setGyroRange(MPU_GYRO_RANGE gyroRange);
+    void setDlpfBandwidth(MPU_DLPF_BANDWIDTH dlpfBandwidth);
+
     int16_t* const getRawGyro();
     int16_t* const getRawAccel();
 

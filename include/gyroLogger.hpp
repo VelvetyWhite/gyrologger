@@ -8,20 +8,9 @@
 
 #include <memory>
 
-#define PIN_MISO 12
-#define PIN_CS   13
-#define PIN_SCK  10
-#define PIN_MOSI 11
-
-#define PIN_SDA 14
-#define PIN_SCL 15
-
-#define SPI_PORT spi1
-#define I2C_PORT i2c1
-
 class GyroLogger {
 public:
-    void init(uint16_t bufferQueueSize, uint16_t rateUs);
+    void init(std::unique_ptr<MpuBase> &&mpu, std::unique_ptr<SdCardWorker> &&sdCardWorker, uint16_t rateUs);
     void run();
 
 private:
@@ -34,7 +23,7 @@ private:
     uint16_t m_rateUs;
 
     std::unique_ptr<MpuBase> m_mpu;
-    SdCardWorker m_sdCardWorker;
+    std::unique_ptr<SdCardWorker> m_sdCardWorker;
 };
 
 #endif

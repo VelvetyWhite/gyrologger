@@ -4,51 +4,48 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <memory>
 #include "pico/stdlib.h"
-#include "pico/binary_info.h"
-#include "pico/time.h"
-#include "hardware/spi.h"
-#include "pico/multicore.h"
-#include "pico/util/queue.h"
-#include "ff.h"
-#include "f_util.h"
-#include "hw_config.h"
+#include "hardware/rtc.h"
 #include "rtc.h"
-
-#include "mpuBase.hpp"
-#include "mpu6500.hpp"
-#include "mpu6050.hpp"
-#include "timer.hpp"
 
 #include "gyroLogger.hpp"
 
-// void calibrate_gyro(MpuBase *mpu, int16_t gyroCal[3], int count)  //Used to calibrate the gyro. The gyro must be still while calibration happens
-// {
-//     int16_t *dataReading;
-//     int64_t temp[3] = {0};
-//     for (int i = 0; i < count; i++)
-//     {
-//         dataReading = mpu->getRawGyro();
-//         temp[0] += dataReading[0];
-//         temp[1] += dataReading[1];
-//         temp[2] += dataReading[2];
-//     }
-//     gyroCal[0] = temp[0] / count;
-//     gyroCal[1] = temp[1] / count;
-//     gyroCal[2] = temp[2] / count;
-// }
+#define PIN_MISO 12
+#define PIN_CS   13
+#define PIN_SCK  10
+#define PIN_MOSI 11
+
+#define PIN_SDA 14
+#define PIN_SCL 15
+
+#define SPI_PORT spi1
+#define I2C_PORT i2c1
+
+#define BUFFER_QUEUE_SIZE 100
+#define RATE_US 1000
 
 int main() {
     stdio_init_all();
+    rtc_init();
     time_init();
 
+    sleep_ms(2000);
+
+    std::unique_ptr<MpuBase> mpu = std::make_unique<Mpu6050>();
+    std::unique_ptr<SdCardWorker> sdCardWorker = std::make_unique<SdCardWorker>();
+
+    sdCardWorker->init(BUFFER_QUEUE_SIZE);
+    //mpu->init(SPI_PORT, PIN_MISO, PIN_MOSI, PIN_SCK, PIN_CS);
+    mpu->init(I2C_PORT, PIN_SDA, PIN_SCL);
+
+    mpu->setAccelerometerRange(MPU_ACCELEROMETER_RANGE::RANGE_16_G);
+    mpu->setDlpfBandwidth(MPU_DLPF_BANDWIDTH::BAND_94_98_HZ);
+    mpu->setGyroRange(MPU_GYRO_RANGE::RANGE_2000_DEG);
+    sleep_ms(10);
+
     GyroLogger gyroLogger;
-    gyroLogger.init(100, 1000);
+    gyroLogger.init(std::move(mpu), std::move(sdCardWorker), RATE_US);
     gyroLogger.run();
 
     return 0;
 }
-//https://github.com/mathertel/OneButton
