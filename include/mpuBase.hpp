@@ -41,6 +41,9 @@ public:
     int16_t* const getUnBiasedGyro();
     int16_t* const getUnBiasedAccel();
 
+    float getAScale() const { return m_aScale[m_accelerometerRange]; }
+    float getGScale() const { return m_gScale[m_gyroRange]; }
+
     virtual void setAccelerometerRange(MPU_ACCELEROMETER_RANGE accelerometerRange);
     virtual void setGyroRange(MPU_GYRO_RANGE gyroRange);
     virtual void setDlpfBandwidth(MPU_DLPF_BANDWIDTH dlpfBandwidth);

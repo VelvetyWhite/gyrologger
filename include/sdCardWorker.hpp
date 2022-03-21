@@ -30,12 +30,15 @@ class SdCardWorker {
 public:
     bool init(uint8_t queueSize);
     void pushData(queue_entry_t &entry);
+    void setFileHeaderData(float aScale, float gScale);
 
 private:
     bool createNewFile(FIL &file, char *name);
     bool writeFileHeader(FIL &file);
     void runnerFunction();
     static void runnerFunctionWrapper();
+
+    float fileHeaderData[2] = { 0.0f };
 
     sd_card_t *m_sd;
     queue_t m_queue;

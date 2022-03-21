@@ -45,9 +45,9 @@ bool SdCardWorker::writeFileHeader(FIL &file) {
                     "id,gyrologger\n"
                     "orientation,Zxy\n"
                     "tscale,0.000001\n"
-                    "gscale,0.00106422515\n"
-                    "ascale,0.00048828125\n"
-                    "t,gx,gy,gz,ax,ay,az\n");
+                    "gscale,%f\n"
+                    "ascale,%f\n"
+                    "t,gx,gy,gz,ax,ay,az\n", fileHeaderData[1], fileHeaderData[0]);
     if (result < 0) { 
         printf("f_printf faield\n"); 
         return false;
@@ -57,6 +57,11 @@ bool SdCardWorker::writeFileHeader(FIL &file) {
 
 void SdCardWorker::pushData(queue_entry_t &entry) {
     queue_add_blocking(&m_queue, &entry);
+}
+
+void SdCardWorker::setFileHeaderData(float aScale, float gScale) {
+    fileHeaderData[0] = aScale;
+    fileHeaderData[1] = gScale;
 }
 
 void SdCardWorker::runnerFunction() {
