@@ -1,4 +1,5 @@
 #include "mpuBase.hpp"
+#include "pico/time.h"
 #include <cmath>
 
 void MpuBase::adjustConfig(uint8_t configRegister, uint8_t configValue, uint8_t bits, uint8_t shift) {
@@ -52,6 +53,7 @@ void MpuBase::calculateBias(uint16_t count) {
         temp[3] += dataReading[0];
         temp[4] += dataReading[1];
         temp[5] += dataReading[2];
+        sleep_ms(1);
     }
     m_gyroBias[0] = temp[0] / count;
     m_gyroBias[1] = temp[1] / count;

@@ -131,4 +131,5 @@ void SdCardWorker::getGyroBiasConfig(int16_t *gyroBias, int16_t *accelBias) {
     }
     f_read(&file, gyroBias, 3 * sizeof(int16_t), NULL);
     f_read(&file, accelBias, 3 * sizeof(int16_t), NULL);
+    closeFile(file, MPU_BIAS_FILE_NAME);
 }
