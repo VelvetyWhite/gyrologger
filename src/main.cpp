@@ -6,6 +6,7 @@
 
 #include "pico/stdlib.h"
 #include "hardware/rtc.h"
+#include "pico/time.h"
 #include "rtc.h"
 
 #include "gyroLogger.hpp"
@@ -26,14 +27,14 @@
 #define MPU_I2C_PORT i2c1
 #define RTC_I2C_PORT i2c0
 
-#define BUFFER_QUEUE_SIZE 10
+#define BUFFER_QUEUE_SIZE 100
 #define RATE_US 1000
 
 int main() {
     stdio_init_all();
     time_init();
 
-    sleep_ms(1000);
+    sleep_ms(2000);
 
     std::unique_ptr<MpuBase> mpu = std::make_unique<Mpu6050>();
     std::unique_ptr<SdCardWorker> sdCardWorker = std::make_unique<SdCardWorker>();
@@ -63,6 +64,7 @@ int main() {
         dateTime.sec = rtc->s;
 
         rtc_set_datetime(&dateTime);
+        sleep_ms(1);
         rtc_get_datetime(&dateTime);
 
         printf("Date: %d.%d.%d %d:%d:%d\n", dateTime.year, dateTime.month, dateTime.day, dateTime.hour, dateTime.min, dateTime.sec);

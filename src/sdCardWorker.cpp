@@ -1,6 +1,5 @@
 #include "sdCardWorker.hpp"
 #include "hardware/rtc.h"
-#include "pico/util/datetime.h"
 #include <cstdio>
 #include <cstring>
 #include <functional>
@@ -64,7 +63,7 @@ bool SdCardWorker::writeFileHeader(FIL &file) {
                     "ascale,%f\n"
                     "t,gx,gy,gz,ax,ay,az\n", fileHeaderData[1], fileHeaderData[0]);
     if (result < 0) { 
-        printf("f_printf faield\n"); 
+        printf("f_printf failed\n"); 
         return false;
     }
     return true;
@@ -91,7 +90,7 @@ void SdCardWorker::runnerFunction() {
         if (m_entry.process) {
             if (!fileOpen) {
                 rtc_get_datetime(&dateTime);
-                datetime_to_str(m_dateTimeBuffer, sizeof(m_dateTimeBuffer), &dateTime);
+                snprintf(m_dateTimeBuffer, sizeof(m_dateTimeBuffer), "%d-%2d-%2d-%2d-%2d-%2d%s", dateTime.year, dateTime.month, dateTime.day, dateTime.hour, dateTime.min, dateTime.sec, ".csv");
                 createNewFile(file, m_dateTimeBuffer);
                 writeFileHeader(file);
                 fileOpen = true;
