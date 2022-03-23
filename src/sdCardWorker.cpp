@@ -1,4 +1,6 @@
 #include "sdCardWorker.hpp"
+#include "hardware/rtc.h"
+#include "pico/util/datetime.h"
 #include <cstdio>
 #include <cstring>
 #include <functional>
@@ -79,27 +81,28 @@ void SdCardWorker::setLoggingFileHeaderData(float aScale, float gScale) {
 
 void SdCardWorker::runnerFunction() {
     FIL file;
-    const char *name = "log.csv";
+    datetime_t dateTime;
 
     bool finished = false;
     bool fileOpen = false;
-    char buffer[100];
 
     while(true) {
         queue_remove_blocking(&m_queue, &m_entry);
         if (m_entry.process) {
             if (!fileOpen) {
-                createNewFile(file, name);
+                rtc_get_datetime(&dateTime);
+                datetime_to_str(m_dateTimeBuffer, sizeof(m_dateTimeBuffer), &dateTime);
+                createNewFile(file, m_dateTimeBuffer);
                 writeFileHeader(file);
                 fileOpen = true;
             }
-            snprintf(buffer, 100, "%llu,%d,%d,%d,%d,%d,%d\n", m_entry.us, 
+            snprintf(m_buffer, 128, "%llu,%d,%d,%d,%d,%d,%d\n", m_entry.us, 
                 m_entry.gyro[0], m_entry.gyro[1], m_entry.gyro[2], 
                 m_entry.acceleration[0], m_entry.acceleration[1], m_entry.acceleration[2]);
-            f_write(&file, buffer, strlen(buffer), NULL);
+            f_write(&file, m_buffer, strlen(m_buffer), NULL);
         } else {
             if (fileOpen) {
-                closeFile(file, name);
+                closeFile(file, m_dateTimeBuffer);
                 fileOpen = false;
             }
         }

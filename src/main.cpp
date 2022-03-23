@@ -26,34 +26,47 @@
 #define MPU_I2C_PORT i2c1
 #define RTC_I2C_PORT i2c0
 
-#define BUFFER_QUEUE_SIZE 100
+#define BUFFER_QUEUE_SIZE 10
 #define RATE_US 1000
 
 int main() {
     stdio_init_all();
-    rtc_init();
     time_init();
 
-    sleep_ms(2000);
+    sleep_ms(1000);
 
     std::unique_ptr<MpuBase> mpu = std::make_unique<Mpu6050>();
     std::unique_ptr<SdCardWorker> sdCardWorker = std::make_unique<SdCardWorker>();
     std::unique_ptr<MD_DS1307> rtc = std::make_unique<MD_DS1307>(RTC_I2C_PORT, RTC_PIN_SDA, RTC_PIN_SCL);
 
-    if (!rtc->isRunning()) {
-        rtc->control(DS1307_CLOCK_HALT, DS1307_OFF);
+    {
+        if (!rtc->isRunning()) {
+            rtc->control(DS1307_CLOCK_HALT, DS1307_OFF);
+        }
+
+        // rtc->yyyy = 2022;
+        // rtc->mm = 3;
+        // rtc->dd = 23;
+        // rtc->h = 2;
+        // rtc->m = 15;
+        // rtc->s = 0;
+        // rtc->writeTime();
+
+        rtc->readTime();
+
+        datetime_t dateTime;
+        dateTime.year = rtc->yyyy;
+        dateTime.month = rtc->mm;
+        dateTime.day = rtc->dd;
+        dateTime.hour = rtc->h;
+        dateTime.min = rtc->m;
+        dateTime.sec = rtc->s;
+
+        rtc_set_datetime(&dateTime);
+        rtc_get_datetime(&dateTime);
+
+        printf("Date: %d.%d.%d %d:%d:%d\n", dateTime.year, dateTime.month, dateTime.day, dateTime.hour, dateTime.min, dateTime.sec);
     }
-
-    // rtc->yyyy = 2022;
-    // rtc->mm = 3;
-    // rtc->dd = 23;
-    // rtc->h = 2;
-    // rtc->m = 15;
-    // rtc->s = 0;
-    // rtc->writeTime();
-
-    rtc->readTime();
-    printf("%d.%d.%d %d:%d:%d Running: %d\n", rtc->yyyy, rtc->mm, rtc->dd, rtc->h, rtc->m, rtc->s, rtc->isRunning());
 
     sdCardWorker->init(BUFFER_QUEUE_SIZE);
     //mpu->init(MPU_SPI_PORT, MPU_PIN_MISO, MPU_PIN_MOSI, MPU_PIN_SCK, MPU_PIN_CS);

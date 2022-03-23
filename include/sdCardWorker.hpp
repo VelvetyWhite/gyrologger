@@ -44,6 +44,9 @@ private:
 
     float fileHeaderData[2] = { 0.0f };
 
+    char m_dateTimeBuffer[128];
+    char m_buffer[128];
+
     sd_card_t *m_sd;
     queue_t m_queue;
     queue_entry_t m_entry;
