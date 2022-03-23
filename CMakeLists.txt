@@ -18,6 +18,7 @@ set(HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/include/mpuBase.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/timer.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/gyroLogger.hpp
         ${CMAKE_CURRENT_SOURCE_DIR}/include/oneButton.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/ds1307.hpp
         )
 
 set(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp 
@@ -29,6 +30,7 @@ set(SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/timer.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gyroLogger.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/oneButton.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ds1307.cpp
         )
 
 # Pull in Raspberry Pi Pico SDK (must be before project)
