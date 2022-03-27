@@ -90,7 +90,7 @@ void SdCardWorker::runnerFunction() {
         if (m_entry.process) {
             if (!fileOpen) {
                 rtc_get_datetime(&dateTime);
-                snprintf(m_dateTimeBuffer, sizeof(m_dateTimeBuffer), "%d-%2d-%2d-%2d-%2d-%2d%s", dateTime.year, dateTime.month, dateTime.day, dateTime.hour, dateTime.min, dateTime.sec, ".csv");
+                snprintf(m_dateTimeBuffer, sizeof(m_dateTimeBuffer), "%d-%d-%d-%d-%d-%d%s", dateTime.year, dateTime.month, dateTime.day, dateTime.hour, dateTime.min, dateTime.sec, ".csv");
                 createNewFile(file, m_dateTimeBuffer);
                 writeFileHeader(file);
                 fileOpen = true;

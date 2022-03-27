@@ -47,10 +47,10 @@ int main() {
 
         // rtc->yyyy = 2022;
         // rtc->mm = 3;
-        // rtc->dd = 23;
-        // rtc->h = 2;
-        // rtc->m = 15;
-        // rtc->s = 0;
+        // rtc->dd = 27;
+        // rtc->h = 4;
+        // rtc->m = 23;
+        // rtc->s = 10;
         // rtc->writeTime();
 
         rtc->readTime();
@@ -62,12 +62,17 @@ int main() {
         dateTime.hour = rtc->h;
         dateTime.min = rtc->m;
         dateTime.sec = rtc->s;
+        dateTime.dotw = rtc->calcDoW(rtc->yyyy, rtc->mm, rtc->dd);
+
+        printf("DS1307 date: %d.%d.%d %d:%d:%d\n", dateTime.year, dateTime.month, dateTime.day, dateTime.hour, dateTime.min, dateTime.sec);
 
         rtc_set_datetime(&dateTime);
         sleep_ms(1);
-        rtc_get_datetime(&dateTime);
 
-        printf("Date: %d.%d.%d %d:%d:%d\n", dateTime.year, dateTime.month, dateTime.day, dateTime.hour, dateTime.min, dateTime.sec);
+        datetime_t dateTime2;
+        rtc_get_datetime(&dateTime2);
+
+        printf("Pico date: %d.%d.%d %d:%d:%d\n", dateTime2.year, dateTime2.month, dateTime2.day, dateTime2.hour, dateTime2.min, dateTime2.sec);
     }
 
     sdCardWorker->init(BUFFER_QUEUE_SIZE);
