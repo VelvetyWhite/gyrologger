@@ -27,3 +27,7 @@ MPU6050:
 DS1307:
 - RTC_PIN_SDA -> 20
 - RTC_PIN_SCL -> 21
+
+<!-- -->
+Button:
+- Pin 26
