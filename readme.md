@@ -31,3 +31,6 @@ DS1307:
 <!-- -->
 Button:
 - Pin 26
+
+# Disclaimer
+This is very much a work in progress thing and can change drastically.
