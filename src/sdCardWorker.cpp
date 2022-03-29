@@ -54,14 +54,15 @@ bool SdCardWorker::closeFile(FIL &file, const char *name) {
 }
 
 bool SdCardWorker::writeFileHeader(FIL &file) {
-    int result = f_printf(&file, "GYROFLOW IMU LOG\n"
+    snprintf(m_buffer, 128, "GYROFLOW IMU LOG\n"
                     "version,1.1\n"
                     "id,gyrologger\n"
                     "orientation,Zxy\n"
                     "tscale,0.000001\n"
-                    "gscale,%f\n"
-                    "ascale,%f\n"
+                    "gscale,%.9f\n"
+                    "ascale,%.9f\n"
                     "t,gx,gy,gz,ax,ay,az\n", fileHeaderData[1], fileHeaderData[0]);
+    int result = f_printf(&file, m_buffer);
     if (result < 0) { 
         printf("f_printf failed\n"); 
         return false;
