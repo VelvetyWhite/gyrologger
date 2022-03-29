@@ -1,6 +1,6 @@
 # Gyrologger
 
-This is a small project mainly built to be used with Gyroflow for video stabilisation. It can log at 1khz using the MPU6050 and 2-3khz using MPU6500 on SPI.The size of my built one is not something I'm proud of considering that it doesn't even have its own power source. Yes, that RTC is huge, it's the only one I had lying around and I wanted the name of the files as a date so I know which is which 😂.
+This is a small project mainly built to be used with [Gyroflow](https://github.com/gyroflow/gyroflow) for video stabilisation. It can log at 1khz using the MPU6050 and 2-3khz using MPU6500 on SPI.The size of my built one is not something I'm proud of considering that it doesn't even have its own power source. Yes, that RTC is huge, it's the only one I had lying around and I wanted the name of the files as a date so I know which is which 😂.
 (I will probably go with a custom pcb in the end but since LCSC doesn't have any MPU6500 in stock that is on hold...)
 
 ![Gyrologger](media/gyrologger.jpg)
