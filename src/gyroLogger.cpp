@@ -26,9 +26,10 @@ void GyroLogger::run() {
     bool shouldWrite = false;
 
     OneButton button(26);
-    button.attachClick([&shouldWrite]() {
+    button.attachClick([&shouldWrite, &timer_2]() {
         printf("Start logging\n");
         shouldWrite = !shouldWrite;
+        timer_2.start();
     });
     button.attachDoubleClick([this, &shouldWrite]() {
         if (!shouldWrite) {
