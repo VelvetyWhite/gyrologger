@@ -107,12 +107,12 @@ void Mpu6500::setCustomConfig() {
 }
 
 void Mpu6500::setAccelerometerRange(MPU_ACCELEROMETER_RANGE accelerometerRange) {
-    adjustConfig(MPU6500_CUSTOM_ACCEL_CONFIG, accelerometerRange, 2, 3);
+    adjustConfig(MPU6500_RA_ACCEL_CONFIG, accelerometerRange, 2, 3);
     MpuBase::setAccelerometerRange(accelerometerRange);
 }
 
 void Mpu6500::setGyroRange(MPU_GYRO_RANGE gyroRange) {
-    adjustConfig(MPU6500_CUSTOM_GYRO_CONFIG, gyroRange, 2, 3);
+    adjustConfig(MPU6500_RA_GYRO_CONFIG, gyroRange, 2, 3);
     MpuBase::setGyroRange(gyroRange);
 }
 

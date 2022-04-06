@@ -28,7 +28,8 @@
 #define RTC_I2C_PORT i2c0
 
 #define BUFFER_QUEUE_SIZE 100
-#define RATE_US 1000
+//#define RATE_US 1000
+#define RATE_US 500
 
 int main() {
     stdio_init_all();
@@ -36,7 +37,7 @@ int main() {
 
     sleep_ms(2000);
 
-    std::unique_ptr<MpuBase> mpu = std::make_unique<Mpu6050>();
+    std::unique_ptr<MpuBase> mpu = std::make_unique<Mpu6500>();
     std::unique_ptr<SdCardWorker> sdCardWorker = std::make_unique<SdCardWorker>();
     std::unique_ptr<MD_DS1307> rtc = std::make_unique<MD_DS1307>(RTC_I2C_PORT, RTC_PIN_SDA, RTC_PIN_SCL);
 
@@ -76,8 +77,8 @@ int main() {
     }
 
     sdCardWorker->init(BUFFER_QUEUE_SIZE);
-    //mpu->init(MPU_SPI_PORT, MPU_PIN_MISO, MPU_PIN_MOSI, MPU_PIN_SCK, MPU_PIN_CS);
-    mpu->init(MPU_I2C_PORT, MPU_PIN_SDA, MPU_PIN_SCL);
+    mpu->init(MPU_SPI_PORT, MPU_PIN_MISO, MPU_PIN_MOSI, MPU_PIN_SCK, MPU_PIN_CS);
+    //mpu->init(MPU_I2C_PORT, MPU_PIN_SDA, MPU_PIN_SCL);
 
     mpu->setAccelerometerRange(MPU_ACCELEROMETER_RANGE::RANGE_16_G);
     mpu->setDlpfBandwidth(MPU_DLPF_BANDWIDTH::BAND_94_98_HZ);
